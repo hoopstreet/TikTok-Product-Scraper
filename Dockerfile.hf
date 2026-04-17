@@ -15,24 +15,28 @@ RUN apt-get update && apt-get install -y \
 RUN useradd -m -u 1000 user
 WORKDIR /home/user/app
 
-# Set environment variables so Python finds the binaries
+# Set environment variables
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH \
     PYTHONUNBUFFERED=1
 
-# Copy files and give ownership to user
-COPY --chown=user:user . .
+# Copy files
+COPY . .
 
-# Switch to user for installation
-USER user
+# 1. Install as ROOT to avoid "Permission Denied" during build
+# We install globally so the 'user' can access the modules
+RUN pip install --no-cache-dir ".[api,sync]"
 
-# Install Crawl4AI and API components into the user local path
-RUN pip install --no-cache-dir --user ".[api,sync]"
-
-# Install Playwright browser
+# 2. Install Playwright browser
 RUN python -m playwright install chromium
+
+# 3. CRITICAL: Give the 'user' ownership of everything AFTER installation
+RUN chown -R user:user /home/user
+
+# Switch to non-root user for security (Hugging Face requirement)
+USER user
 
 EXPOSE 7860
 
-# Start using python -m to bypass PATH issues
+# Start using the python module directly
 CMD ["python", "-m", "uvicorn", "crawl4ai.api.main:app", "--host", "0.0.0.0", "--port", "7860"]
