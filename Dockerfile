@@ -10,3 +10,4 @@ USER user
 COPY --chown=user . .
 EXPOSE 7860
 CMD ["uvicorn", "crawl4ai.api.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# BuildID: 1776449506
