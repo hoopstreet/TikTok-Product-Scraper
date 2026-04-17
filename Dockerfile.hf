@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     libvpx-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Setup user 1000
+# Setup user
 RUN useradd -m -u 1000 user
 WORKDIR /home/user/app
 
@@ -24,19 +24,18 @@ ENV HOME=/home/user \
 # Copy files
 COPY --chown=user:user . .
 
-# 1. Install dependencies + explicit FastAPI/Uvicorn
-RUN pip install --no-cache-dir ".[api,sync]" uvicorn fastapi gunicorn
+# Install dependencies - we force the install of the local directory
+RUN pip install --no-cache-dir . 
+RUN pip install --no-cache-dir uvicorn fastapi gunicorn
 
-# 2. Install Playwright browser
+# Install Playwright
 RUN python -m playwright install chromium
 
-# 3. Fix permissions
+# Final permission fix
 RUN chown -R user:user /home/user/app
 
-# Switch to non-root user
 USER user
-
 EXPOSE 7860
 
-# Pointing to the main.py found in your root directory
+# Force uvicorn to look at the current directory's main.py
 CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
