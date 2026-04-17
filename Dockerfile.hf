@@ -23,20 +23,20 @@ ENV HOME=/home/user \
 # Copy files
 COPY . .
 
-# 1. Install as ROOT to avoid "Permission Denied" during build
-# We install globally so the 'user' can access the modules
-RUN pip install --no-cache-dir ".[api,sync]"
+# 1. Install dependencies + EXPLICIT uvicorn/fastapi
+# This ensures the executable is present even if the main package fails to link it
+RUN pip install --no-cache-dir ".[api,sync]" uvicorn fastapi gunicorn
 
 # 2. Install Playwright browser
 RUN python -m playwright install chromium
 
-# 3. CRITICAL: Give the 'user' ownership of everything AFTER installation
+# 3. Fix permissions for Hugging Face
 RUN chown -R user:user /home/user
 
-# Switch to non-root user for security (Hugging Face requirement)
+# Switch to non-root user
 USER user
 
 EXPOSE 7860
 
-# Start using the python module directly
+# Start using uvicorn directly (since we verified it's installed now)
 CMD ["python", "-m", "uvicorn", "crawl4ai.api.main:app", "--host", "0.0.0.0", "--port", "7860"]
