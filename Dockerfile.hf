@@ -21,21 +21,21 @@ ENV HOME=/home/user \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/home/user/app
 
-# Copy files
+# Copy your project files
 COPY --chown=user:user . .
 
-# Install dependencies - we force the install of the local directory
-RUN pip install --no-cache-dir . 
-RUN pip install --no-cache-dir uvicorn fastapi gunicorn
+# 1. Install the official crawl4ai and server requirements
+# We install from the official repo to ensure the 'api' submodule is present
+RUN pip install --no-cache-dir "crawl4ai[api,sync]" uvicorn fastapi gunicorn jinja2
 
-# Install Playwright
+# 2. Install Playwright
 RUN python -m playwright install chromium
 
-# Final permission fix
+# 3. Permissions fix
 RUN chown -R user:user /home/user/app
 
 USER user
 EXPOSE 7860
 
-# Force uvicorn to look at the current directory's main.py
+# Start the app using the main.py we found in your root
 CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
