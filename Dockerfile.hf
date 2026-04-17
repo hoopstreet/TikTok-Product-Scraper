@@ -18,25 +18,26 @@ WORKDIR /home/user/app
 # Set environment variables
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/home/user/app
 
 # Copy files
-COPY . .
+COPY --chown=user:user . .
 
-# 1. Install dependencies + EXPLICIT uvicorn/fastapi
-# This ensures the executable is present even if the main package fails to link it
+# 1. Install dependencies + explicit FastAPI/Uvicorn
 RUN pip install --no-cache-dir ".[api,sync]" uvicorn fastapi gunicorn
 
 # 2. Install Playwright browser
 RUN python -m playwright install chromium
 
-# 3. Fix permissions for Hugging Face
-RUN chown -R user:user /home/user
+# 3. Fix permissions
+RUN chown -R user:user /home/user/app
 
 # Switch to non-root user
 USER user
 
 EXPOSE 7860
 
-# Start using uvicorn directly (since we verified it's installed now)
+# We use the full module path. 
+# If your folder has a file named main.py inside crawl4ai/api/, this is the path:
 CMD ["python", "-m", "uvicorn", "crawl4ai.api.main:app", "--host", "0.0.0.0", "--port", "7860"]
