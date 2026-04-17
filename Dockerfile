@@ -1,3 +1,4 @@
+# Version 2.0.1 - Force Rebuild
 FROM python:3.10-slim
 ENV PYTHONUNBUFFERED=1 PORT=7860 HOME=/home/user
 RUN useradd -m -u 1000 user
