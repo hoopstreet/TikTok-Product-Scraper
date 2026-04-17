@@ -2,8 +2,8 @@ name: Build and Push to Docker Hub
 
 on:
   push:
-    branches: [ "main" ] # Triggers whenever you push to the main branch
-  workflow_dispatch:      # Allows you to run it manually from the Actions tab
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build-and-push:
@@ -27,8 +27,20 @@ jobs:
           context: .
           file: ./Dockerfile.hf
           push: true
-          # Direct link to your repo: hoopstreet/tiktok-product-scraper
-          tags: hoopstreet/tiktok-product-scraper:latest
-          # This helps with faster builds on subsequent runs
+          # Using your specific repository and tag
+          tags: hoopstreet/tiktok-product-scraper:sync
+          # Enables faster builds using GitHub Action cache
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trigger Hugging Face Sync
+        # This step forces Hugging Face to pull the new image from Docker Hub
+        run: |
+          git config --global user.email "bot@hoopstreet.com"
+          git config --global user.name "Hoopstreet Bot"
+          git clone https://hoopstreet:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/hoopstreet/TikTok-Product-Scraper hf_space
+          cd hf_space
+          echo "Build ID: ${{ github.sha }}" > build_info.txt
+          git add .
+          git commit -m "Syncing Docker Image: sync tag"
+          git push origin main
