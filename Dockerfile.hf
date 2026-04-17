@@ -2,12 +2,16 @@ FROM python:3.10-slim
 
 USER root
 
-# Install system dependencies for Playwright
+# Install system dependencies manually
 RUN apt-get update && apt-get install -y \
     libgbm-dev libnss3 libasound2 libxss1 libxtst6 \
-    git wget && rm -rf /var/lib/apt/lists/*
+    git wget \
+    fonts-unifont \
+    fonts-liberation \
+    libvpx-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Setup non-root user for Hugging Face (UID 1000)
+# Setup non-root user (UID 1000)
 RUN useradd -m -u 1000 user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH \
@@ -16,19 +20,19 @@ ENV HOME=/home/user \
 
 WORKDIR $HOME/app
 
-# Copy all files from your GitHub repo
+# Copy all files
 COPY --chown=user:user . .
 
-# Install Crawl4AI with both API and Sync requirements
+# Install Crawl4AI
 RUN pip install --no-cache-dir ".[api,sync]"
 
-# Install Chromium for scraping
-RUN python -m playwright install chromium --with-deps
+# Install ONLY the browser
+RUN python -m playwright install chromium
+
+# Ensure permissions are correct after install
+RUN chown -R user:user $HOME/app
 
 USER user
-
-# Port for Hugging Face
 EXPOSE 7860
 
-# Start the API server
 CMD ["uvicorn", "crawl4ai.api.main:app", "--host", "0.0.0.0", "--port", "7860"]
